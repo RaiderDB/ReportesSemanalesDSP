@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reportes Semanales - DIPRESEH</title>
+    <meta name="description" content="Dashboard de Reportes Semanales - Municipalidad de Arica - DIPRESEH">
+
+    <!-- Preconnect -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
+    <link rel="dns-prefetch" href="https://cdnjs.cloudflare.com">
+
+    <!-- CSS -->
+    <link rel="stylesheet" href="/css/styles.css">
+    <link rel="stylesheet" href="/css/glass-effect.css">
+    <link rel="stylesheet" href="/css/navbar.css">
+
+    <!-- Fuentes -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <noscript>
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    </noscript>
+
+    <!-- Tailwind -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <style>
+        #presentacion-view { animation: fadeIn 0.3s ease-in; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        .animate-gradient { animation: gradient-shift 15s ease infinite; background-size: 200% 200%; }
+        @keyframes gradient-shift { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        .spinning { animation: spin 1s linear infinite; }
+        #presentacion-view * { text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3); }
+        #presentacion-gradient-background { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; overflow: hidden; z-index: 0; pointer-events: none; }
+        #presentacion-gradient-background canvas { display: block; width: 100%; height: 100%; }
+        @keyframes slideInRight { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        @keyframes slideOutRight { from { transform: translateX(0); opacity: 1; } to { transform: translateX(100%); opacity: 0; } }
+        .animate-slide-in { animation: slideInRight 0.3s ease-out; }
+        #indicador-actualizacion { font-size: 11px; color: #6b7280; display: flex; align-items: center; gap: 4px; }
+        #indicador-actualizacion .punto-activo { width: 6px; height: 6px; background-color: #10b981; border-radius: 50%; animation: pulse 2s ease-in-out infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+    </style>
+</head>
+
+<body>
+    <!-- Fondo animado Three.js -->
+    <div id="gradient-background"></div>
+
+    <!-- Navbar -->
+    <nav class="navbar">
+        <div class="navbar-container">
+            <a href="/" class="navbar-logo">
+                <img class="navbar-logo-wide" src="/img/dipreseh_horizontal.png" alt="DIPRESEH - Municipalidad de Arica">
+                <img class="navbar-logo-icon" src="/img/dipreseh.png" alt="DIPRESEH">
+                <span>Reportes Semanales</span>
+            </a>
+            <button class="navbar-toggle" id="navbarToggle" aria-label="Toggle navigation">
+                <span></span><span></span><span></span>
+            </button>
+            <ul class="navbar-menu" id="navbarMenu">
+                <li class="navbar-item">
+                    <a href="/" class="navbar-link" data-tooltip="Reportes Semanales">
+                        <i class="material-icons">description</i>
+                        <span>Reportes Semanales</span>
+                    </a>
+                </li>
+            </ul>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main id="main">
+        <div class="max-w-7xl mx-auto p-6">
+            <!-- Header -->
+            <div class="mb-6">
+                <div class="glass-card p-6 mb-4">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h1 class="text-3xl font-bold text-gray-800">Reportes Semanales</h1>
+                            <p class="text-gray-700 mt-1">Municipalidad de Arica - DIPRESEH</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Filtros -->
+            <div class="bg-gray-200 rounded-2xl shadow-md p-5 mb-6">
+                <div class="flex flex-wrap items-center gap-4">
+                    <div class="flex items-center gap-3">
+                        <div class="flex items-center gap-2 bg-gray-50 px-3 py-2 rounded-lg border border-gray-200">
+                            <span class="text-gray-600 font-medium text-sm">Filtrar por Oficina</span>
+                            <select id="filtro-oficina" class="bg-transparent border-0 text-sm focus:outline-none focus:ring-0 cursor-pointer">
+                                <option value="todas">Todas las Oficinas</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <div class="flex items-center gap-2 bg-gray-50 px-3 py-2 rounded-lg border border-gray-200">
+                            <span class="text-gray-600 font-medium text-sm">Fecha Inicio</span>
+                            <input type="date" id="fecha-inicio" class="bg-transparent border-0 text-sm focus:outline-none focus:ring-0">
+                        </div>
+                        <div class="flex items-center gap-2 bg-gray-50 px-3 py-2 rounded-lg border border-gray-200">
+                            <span class="text-gray-600 font-medium text-sm">Fecha Fin</span>
+                            <input type="date" id="fecha-fin" class="bg-transparent border-0 text-sm focus:outline-none focus:ring-0">
+                        </div>
+                        <button id="btn-filtrar-personalizado" onclick="aplicarFiltro()" class="px-3 py-1.5 text-xs font-medium bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition shadow-sm flex items-center gap-1.5">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"></path></svg>
+                            Filtrar
+                        </button>
+                        <button id="btn-refresh" onclick="cargarReportes(true)" class="px-3 py-1.5 text-xs font-medium bg-gray-700 text-white rounded-lg hover:bg-gray-800 transition shadow-sm flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed">
+                            <svg id="refresh-icon" class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v6h6M20 20v-6h-6M20 8a8 8 0 00-14.828-3M4 16a8 8 0 0014.828 3" /></svg>
+                            <span id="refresh-text">Actualizar</span>
+                        </button>
+                        <button id="btn-exportar-semana" class="px-3 py-1.5 text-xs font-medium bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition shadow-sm flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed" title="Exporta todos los reportes mostrados a un PDF">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v8m4-4H8m9-10H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V6a2 2 0 00-2-2z"/></svg>
+                            Exportar PDF (filtros)
+                        </button>
+                        <button id="btn-imprimir-semana" class="px-3 py-1.5 text-xs font-medium bg-slate-700 text-white rounded-lg hover:bg-slate-800 transition shadow-sm flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed" title="Abre vista previa e imprime">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 9V2h12v7M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2M6 14h12v8H6v-8z"/></svg>
+                            Imprimir (vista previa)
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Loading -->
+            <div id="loading" class="flex justify-center items-center py-20">
+                <div class="loader"></div>
+                <span class="ml-4 text-gray-500">Cargando reportes...</span>
+            </div>
+
+            <!-- Content -->
+            <div id="content" class="hidden">
+                <div class="mb-4 flex items-center justify-between">
+                    <div class="flex items-center gap-4">
+                        <p class="text-gray-600">
+                            Mostrando <span id="total-reportes" class="font-semibold text-gray-900">0</span> reportes
+                        </p>
+                        <div id="indicador-actualizacion" class="hidden">
+                            <span class="punto-activo"></span>
+                            <span>Actualización automática activa</span>
+                            <span id="ultima-actualizacion-texto" class="text-gray-400"></span>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-gray-200 rounded-2xl shadow-md p-6 hover:shadow-lg transition">
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full bg-white rounded-lg overflow-hidden">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Fecha</th>
+                                    <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Responsable</th>
+                                    <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Oficina</th>
+                                    <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Semana</th>
+                                    <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Actividades Realizadas</th>
+                                    <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Comentarios</th>
+                                    <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Fecha de Registro</th>
+                                    <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tabla-reportes" class="bg-white divide-y divide-gray-200">
+                                <tr><td colspan="8" class="px-4 py-8 text-center text-gray-500"><div class="flex flex-col items-center"><div class="loader" style="width: 24px; height: 24px;"></div><span class="mt-2">Cargando reportes...</span></div></td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Vista de Presentación -->
+            <div id="presentacion-view" class="hidden fixed inset-0 z-50 overflow-y-auto">
+                <div id="presentacion-gradient-background"></div>
+                <div class="fixed inset-0 bg-black/20 pointer-events-none" style="z-index: 10;"></div>
+                <div class="relative min-h-full flex flex-col px-8 py-12 text-white" style="z-index: 20;">
+                    <button onclick="cerrarPresentacion()" class="fixed top-6 right-6 text-white hover:text-gray-200 transition z-20 bg-black/20 rounded-full p-3 backdrop-blur-sm">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                    </button>
+                    <div class="mb-8 flex items-center gap-6">
+                        <img src="/img/logo-arica.png" alt="Municipalidad de Arica" class="h-32 w-auto">
+                        <div>
+                            <h1 class="text-5xl font-bold mb-2 drop-shadow-lg">Reporte Semanal</h1>
+                            <p class="text-2xl text-blue-100 font-light">Municipalidad de Arica - DIPRESEH</p>
+                        </div>
+                    </div>
+                    <div class="max-w-5xl w-full space-y-8 mx-auto">
+                        <div class="grid grid-cols-2 gap-6 mb-8">
+                            <div class="bg-white/10 backdrop-blur-md rounded-2xl p-6 border border-white/20 shadow-xl">
+                                <p class="text-sm font-semibold text-blue-100 uppercase mb-2">Fecha</p>
+                                <p id="presentacion-fecha" class="text-3xl font-bold">-</p>
+                            </div>
+                            <div class="bg-white/10 backdrop-blur-md rounded-2xl p-6 border border-white/20 shadow-xl">
+                                <p class="text-sm font-semibold text-blue-100 uppercase mb-2">Responsable</p>
+                                <p id="presentacion-responsable" class="text-3xl font-bold">-</p>
+                            </div>
+                            <div class="bg-white/10 backdrop-blur-md rounded-2xl p-6 border border-white/20 shadow-xl">
+                                <p class="text-sm font-semibold text-blue-100 uppercase mb-2">Oficina</p>
+                                <p id="presentacion-oficina" class="text-3xl font-bold">-</p>
+                            </div>
+                            <div class="bg-white/10 backdrop-blur-md rounded-2xl p-6 border border-white/20 shadow-xl">
+                                <p class="text-sm font-semibold text-blue-100 uppercase mb-2">Semana</p>
+                                <p id="presentacion-semana" class="text-3xl font-bold">-</p>
+                            </div>
+                        </div>
+                        <div class="bg-white/10 backdrop-blur-md rounded-2xl p-8 border border-white/20 shadow-xl">
+                            <h2 class="text-2xl font-bold mb-4 flex items-center gap-3">
+                                <svg class="w-8 h-8 text-yellow-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path></svg>
+                                Actividades Realizadas
+                            </h2>
+                            <div class="bg-white/5 rounded-xl p-6 border border-white/10">
+                                <p id="presentacion-actividades" class="text-xl leading-relaxed whitespace-pre-wrap">-</p>
+                            </div>
+                        </div>
+                        <div class="bg-white/10 backdrop-blur-md rounded-2xl p-8 border border-white/20 shadow-xl">
+                            <h2 class="text-2xl font-bold mb-4 flex items-center gap-3">
+                                <svg class="w-8 h-8 text-purple-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z"></path></svg>
+                                Comentarios
+                            </h2>
+                            <div class="bg-white/5 rounded-xl p-6 border border-white/10">
+                                <p id="presentacion-comentarios" class="text-xl leading-relaxed whitespace-pre-wrap">-</p>
+                            </div>
+                        </div>
+                        <div class="text-center pt-4">
+                            <p class="text-blue-100 text-lg">Fecha de Registro: <span id="presentacion-fecha-registro" class="font-semibold">-</span></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Error -->
+            <div id="error" class="hidden bg-red-50 border border-red-200 rounded-xl p-6 text-center">
+                <p class="text-red-600 font-medium">Error al cargar datos</p>
+                <p class="text-red-400 text-sm mt-1">Verifica la conexión a internet</p>
+                <button onclick="cargarReportes()" class="mt-4 bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700">Reintentar</button>
+            </div>
+        </div>
+    </main>
+
+    <!-- Scripts -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js" defer></script>
+    <script src="/js/gradient-background.js" defer></script>
+    <script src="/js/navbar.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.5.31/dist/jspdf.plugin.autotable.min.js"></script>
+    <script src="/js/reportes.js"></script>
+</body>
+</html>

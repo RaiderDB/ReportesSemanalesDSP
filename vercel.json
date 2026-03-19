@@ -1,0 +1,23 @@
+{
+  "rewrites": [
+    { "source": "/api/datos", "destination": "/api/datos" },
+    { "source": "/api/dashboard", "destination": "/api/dashboard" },
+    { "source": "/api/hojas", "destination": "/api/hojas" },
+    { "source": "/api/todas-las-hojas", "destination": "/api/todas_las_hojas" }
+  ],
+  "functions": {
+    "api/*.py": {
+      "runtime": "@vercel/python@4.5.0",
+      "maxDuration": 30
+    }
+  },
+  "headers": [
+    {
+      "source": "/api/(.*)",
+      "headers": [
+        { "key": "Access-Control-Allow-Origin", "value": "*" },
+        { "key": "Access-Control-Allow-Methods", "value": "GET, OPTIONS" }
+      ]
+    }
+  ]
+}
