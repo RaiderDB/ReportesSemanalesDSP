@@ -144,9 +144,8 @@ function _abrirImpresion(html) {
 }
 
 function imprimirReporte(reporte) {
-    const fechaInicio = document.getElementById('fecha-inicio')?.value || '';
-    const fechaFin = document.getElementById('fecha-fin')?.value || '';
-    const rango = _formatoRangoFechasEs(fechaInicio, fechaFin);
+    const semana = document.getElementById('filtro-semana')?.value || '';
+    const rango = semana && semana !== 'todas' ? semana : 'Todas las semanas';
     const oficina = (reporte.Oficina || 'reporte').toString().trim();
     const actividades = (reporte.Actividades || reporte['Actividades Realizadas'] || '').toString();
     const rows = [{ oficina, acciones: _contarAccionesDesdeTexto(actividades), textos: [_normalizarTextoReporte(reporte)] }];
@@ -155,9 +154,8 @@ function imprimirReporte(reporte) {
 
 function imprimirSemana() {
     if (!window.reportesActuales || window.reportesActuales.length === 0) { alert('No hay reportes para imprimir con los filtros actuales.'); return; }
-    const fechaInicio = document.getElementById('fecha-inicio')?.value || '';
-    const fechaFin = document.getElementById('fecha-fin')?.value || '';
-    const rango = _formatoRangoFechasEs(fechaInicio, fechaFin);
+    const semana = document.getElementById('filtro-semana')?.value || '';
+    const rango = semana && semana !== 'todas' ? semana : 'Todas las semanas';
     const rows = _agruparPorOficina(window.reportesActuales);
     _abrirImpresion(_buildHtmlPlantilla({ titulo: 'REPORTE SEMANAL', rangoFechas: rango, rows }));
 }
@@ -184,9 +182,8 @@ async function _buildPdfPlantilla({ titulo, rangoFechas, rows }) {
 }
 
 function exportarReportePDF(reporte) {
-    const fechaInicio = document.getElementById('fecha-inicio')?.value || '';
-    const fechaFin = document.getElementById('fecha-fin')?.value || '';
-    const rango = _formatoRangoFechasEs(fechaInicio, fechaFin);
+    const semana = document.getElementById('filtro-semana')?.value || '';
+    const rango = semana && semana !== 'todas' ? semana : 'Todas las semanas';
     const oficina = (reporte.Oficina || 'reporte').toString().trim();
     const actividades = (reporte.Actividades || reporte['Actividades Realizadas'] || '').toString();
     const rows = [{ oficina, acciones: _contarAccionesDesdeTexto(actividades), textos: [_normalizarTextoReporte(reporte)] }];
@@ -195,9 +192,8 @@ function exportarReportePDF(reporte) {
 
 function exportarSemanaPDF() {
     if (!window.reportesActuales || window.reportesActuales.length === 0) { alert('No hay reportes para exportar.'); return; }
-    const fechaInicio = document.getElementById('fecha-inicio')?.value || '';
-    const fechaFin = document.getElementById('fecha-fin')?.value || '';
-    const rango = _formatoRangoFechasEs(fechaInicio, fechaFin);
+    const semana = document.getElementById('filtro-semana')?.value || '';
+    const rango = semana && semana !== 'todas' ? semana : 'Todas las semanas';
     const rows = _agruparPorOficina(window.reportesActuales);
     _buildPdfPlantilla({ titulo: 'REPORTE SEMANAL', rangoFechas: rango, rows }).then(doc => { if (!doc) return; doc.save('reporte_semanal_oficinas.pdf'); });
 }
@@ -235,6 +231,44 @@ function poblarSelectOficinas(oficinas = []) {
     }
 }
 
+let semanaIniciada = false;
+
+function poblarSelectSemanas(reportes = []) {
+    const select = document.getElementById('filtro-semana');
+    if (!select) return;
+    
+    // Extraer semanas únicas que no estén vacías
+    const semanasUnicas = Array.from(new Set(
+        reportes.map(r => (r.Semana || '').toString().trim()).filter(s => s.length > 0)
+    ));
+    
+    // Sort logic isn't strictly necessary if backend sorts chronologically, but we maintain original order
+    // which is already descending date.
+    
+    const selectedBefore = select.value;
+    select.innerHTML = '';
+    
+    const optTodas = document.createElement('option');
+    optTodas.value = 'todas'; 
+    optTodas.textContent = 'Todas las semanas';
+    select.appendChild(optTodas);
+    
+    semanasUnicas.forEach(semana => {
+        const option = document.createElement('option');
+        option.value = semana; 
+        option.textContent = semana;
+        select.appendChild(option);
+    });
+    
+    if (selectedBefore && selectedBefore !== 'todas' && Array.from(select.options).some(o => o.value === selectedBefore)) {
+        select.value = selectedBefore;
+    } else if (!semanaIniciada && semanasUnicas.length > 0) {
+        // Seleccionar la semana más reciente por defecto en la carga inicial
+        select.value = semanasUnicas[0];
+        semanaIniciada = true;
+    }
+}
+
 // Cargar reportes
 async function cargarReportes(forceRefresh = false) {
     const loadingEl = document.getElementById('loading');
@@ -254,13 +288,10 @@ async function cargarReportes(forceRefresh = false) {
 
     try {
         const oficina = document.getElementById('filtro-oficina').value;
-        const fechaInicio = document.getElementById('fecha-inicio').value;
-        const fechaFin = document.getElementById('fecha-fin').value;
 
         let url = '/api/datos';
         const params = new URLSearchParams();
         if (oficina && oficina !== 'todas') params.append('oficina', oficina);
-        if (fechaInicio && fechaFin) { params.append('start', fechaInicio); params.append('end', fechaFin); }
         params.append('t', Date.now().toString());
         if (forceRefresh) params.append('refresh', '1');
         if (params.toString()) url += '?' + params.toString();
@@ -275,21 +306,18 @@ async function cargarReportes(forceRefresh = false) {
             poblarSelectOficinas(oficinasDisponibles);
         }
 
-        // Filtrado client-side por fechas como respaldo
+        // Poblado de semanas
+        poblarSelectSemanas(data.reportes || []);
+
+        // Filtrado client-side por semana
         let reportesFiltrados = data.reportes || [];
-        if (fechaInicio && fechaFin) {
-            const startDate = new Date(fechaInicio + 'T00:00:00');
-            const endDate = new Date(fechaFin + 'T23:59:59');
+        const filtroSemana = document.getElementById('filtro-semana');
+        const semanaSeleccionada = filtroSemana ? filtroSemana.value : 'todas';
+        
+        if (semanaSeleccionada && semanaSeleccionada !== 'todas') {
             reportesFiltrados = reportesFiltrados.filter(r => {
-                const fechaStr = r.Fecha || '';
-                if (!fechaStr) return false;
-                // Parsear dd/mm/yyyy
-                const parts = fechaStr.split('/');
-                if (parts.length === 3) {
-                    const reportDate = new Date(parseInt(parts[2]), parseInt(parts[1]) - 1, parseInt(parts[0]));
-                    return reportDate >= startDate && reportDate <= endDate;
-                }
-                return true;
+                const s = (r.Semana || '').toString().trim();
+                return s === semanaSeleccionada;
             });
         }
 
@@ -490,18 +518,10 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     } catch (e) { console.warn('No se pudo leer querystring oficina:', e); }
 
-    const hoy = new Date();
-    const hace30Dias = new Date(hoy); hace30Dias.setDate(hace30Dias.getDate() - 30);
-    const fechaInicio = document.getElementById('fecha-inicio');
-    const fechaFin = document.getElementById('fecha-fin');
-    if (fechaInicio && fechaFin) {
-        const fmt = (f) => `${f.getFullYear()}-${String(f.getMonth()+1).padStart(2,'0')}-${String(f.getDate()).padStart(2,'0')}`;
-        fechaInicio.value = fmt(hace30Dias); fechaFin.value = fmt(hoy);
-    }
-
     document.getElementById('filtro-oficina').addEventListener('change', () => cargarReportes());
-    if (fechaInicio) fechaInicio.addEventListener('change', () => cargarReportes());
-    if (fechaFin) fechaFin.addEventListener('change', () => cargarReportes());
+    
+    const filtroSemana = document.getElementById('filtro-semana');
+    if (filtroSemana) filtroSemana.addEventListener('change', () => cargarReportes());
 
     const btnExportarSemana = document.getElementById('btn-exportar-semana');
     if (btnExportarSemana) btnExportarSemana.addEventListener('click', () => exportarSemanaPDF());
