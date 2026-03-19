@@ -244,6 +244,13 @@
     <script src="/js/navbar.js?v=2" defer></script>
     <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.5.31/dist/jspdf.plugin.autotable.min.js"></script>
-    <script src="/js/reportes.js?v=2"></script>
+    <script>
+        // Dynamic cache-busting: always load the latest reportes.js
+        (function() {
+            var s = document.createElement('script');
+            s.src = '/js/reportes.js?t=' + Date.now();
+            document.body.appendChild(s);
+        })();
+    </script>
 </body>
 </html>
