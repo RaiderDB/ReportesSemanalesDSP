@@ -78,7 +78,7 @@ class handler(BaseHTTPRequestHandler):
                     elif 'Fecha' in df.columns:
                         df_filtrado = df[df['Fecha'].notna()].copy()
                         if not df_filtrado.empty:
-                            df_filtrado['Fecha_date'] = pd.to_datetime(df_filtrado['Fecha'], errors='coerce').dt.date
+                            df_filtrado['Fecha_date'] = pd.to_datetime(df_filtrado['Fecha'], errors='coerce', dayfirst=True).dt.date
                             df_filtrado = df_filtrado[df_filtrado['Fecha_date'].notna()]
                             if not df_filtrado.empty:
                                 df = df_filtrado[
