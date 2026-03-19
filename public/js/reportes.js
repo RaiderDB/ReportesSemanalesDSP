@@ -58,7 +58,7 @@ function _formatearActividadesConNegrita(texto) {
     const escaped = escapeHtml(texto);
     let resultado = escaped.replace(/^(\d+\.\s+.+)$/gm, '<strong>$1</strong>');
     const patrones = [
-        /(\d+)[\.\\-\)\s]+([^<\n]*)/g,
+        /(\d+)[\.\\)\s-]+([^<\n]*)/g,
         /([•\-\*])\s+([^<\n]*)/g,
         /\((\d+)\)\s+([^<\n]*)/g
     ];
