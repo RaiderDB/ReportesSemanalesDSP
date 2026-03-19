@@ -481,9 +481,9 @@ document.addEventListener('DOMContentLoaded', function() {
         fechaInicio.value = fmt(hace30Dias); fechaFin.value = fmt(hoy);
     }
 
-    document.getElementById('filtro-oficina').addEventListener('change', cargarReportes);
-    if (fechaInicio) fechaInicio.addEventListener('change', cargarReportes);
-    if (fechaFin) fechaFin.addEventListener('change', cargarReportes);
+    document.getElementById('filtro-oficina').addEventListener('change', () => cargarReportes());
+    if (fechaInicio) fechaInicio.addEventListener('change', () => cargarReportes());
+    if (fechaFin) fechaFin.addEventListener('change', () => cargarReportes());
 
     const btnExportarSemana = document.getElementById('btn-exportar-semana');
     if (btnExportarSemana) btnExportarSemana.addEventListener('click', () => exportarSemanaPDF());
