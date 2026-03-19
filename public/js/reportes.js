@@ -275,7 +275,25 @@ async function cargarReportes(forceRefresh = false) {
             poblarSelectOficinas(oficinasDisponibles);
         }
 
-        const totalActual = data.total || 0;
+        // Filtrado client-side por fechas como respaldo
+        let reportesFiltrados = data.reportes || [];
+        if (fechaInicio && fechaFin) {
+            const startDate = new Date(fechaInicio + 'T00:00:00');
+            const endDate = new Date(fechaFin + 'T23:59:59');
+            reportesFiltrados = reportesFiltrados.filter(r => {
+                const fechaStr = r.Fecha || '';
+                if (!fechaStr) return false;
+                // Parsear dd/mm/yyyy
+                const parts = fechaStr.split('/');
+                if (parts.length === 3) {
+                    const reportDate = new Date(parseInt(parts[2]), parseInt(parts[1]) - 1, parseInt(parts[0]));
+                    return reportDate >= startDate && reportDate <= endDate;
+                }
+                return true;
+            });
+        }
+
+        const totalActual = reportesFiltrados.length;
         const hayNuevosReportes = totalActual > totalReportesAnterior && totalReportesAnterior > 0;
         document.getElementById('total-reportes').textContent = totalActual;
         if (hayNuevosReportes && !forceRefresh) mostrarNotificacionNuevosReportes(totalActual - totalReportesAnterior);
@@ -286,10 +304,10 @@ async function cargarReportes(forceRefresh = false) {
 
         const tbody = document.getElementById('tabla-reportes');
         if (!tbody) return;
-        window.reportesActuales = data.reportes || [];
+        window.reportesActuales = reportesFiltrados;
 
-        if (data.reportes && data.reportes.length > 0) {
-            tbody.innerHTML = data.reportes.map(reporte => {
+        if (reportesFiltrados.length > 0) {
+            tbody.innerHTML = reportesFiltrados.map(reporte => {
                 const fecha = escapeHtml(reporte.Fecha || '-');
                 const responsable = escapeHtml(reporte.Responsable || reporte['Nombre del Responsable'] || '-');
                 const oficina = escapeHtml(reporte.Oficina || '-');
